@@ -3,4 +3,4 @@
 /src/profiles/
 /src/closure-scripts/
 # All .js files are compiled from their source .ts files.
-/**/*.js
+/**/*.ts
