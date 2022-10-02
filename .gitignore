@@ -1,4 +1,6 @@
 .DS_Store
 /node_modules
+/src/profiles/
+/src/closure-scripts/
 # All .js files are compiled from their source .ts files.
 /**/*.js

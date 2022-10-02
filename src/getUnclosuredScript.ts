@@ -27,7 +27,15 @@
 import fs from "fs"
 import path from "path"
 
-const writeDictionary = (squardleCode: string): void => {
+// const _defineProperty = Object.defineProperty;
+// Object.defineProperty = function __defineProperty () {};
+// ${code};
+// Object.defineProperty = _defineProperty;
+
+const getUnclosuredScript = (
+  squardleCode: string,
+  puzzleKey: string
+): string => {
   const re =
     /(\s*|\n*)\((\s*|\n*)function(\s*|\n*)\((\s*|\n*)\)(\s*|\n*)\{(?<code>(\n|.)+)\}(\s*|\n*)\)(\s*|\n*)\((\s*|\n*)\)/
   const match = squardleCode.match(re)
@@ -35,23 +43,39 @@ const writeDictionary = (squardleCode: string): void => {
   if (match && match.groups) {
     const { code } = match.groups
     const modifiedCode = `
-      const _defineProperty = Object.defineProperty;
-      Object.defineProperty = function __defineProperty () {};
       ${code};
-      Object.defineProperty = _defineProperty;
-      window._solution = {
-        words: gPuzzleManager.puzzle.words,
-        optionalWords: gPuzzleManager.puzzle.optionalWords
+      
+      function _getPuzzleManager() {
+        return new Promise(resolve => {
+          const puzzleKey = ${puzzleKey ? `"${puzzleKey}"` : null}
+          if (puzzleKey) {
+            api.getPuzzleByKey(puzzleKey).then(result => {
+              pm = new PuzzleManager()
+              pm.setSpecialPuzzle(puzzleKey, result.puzzle)
+              resolve(pm)
+            })
+          } else {
+            resolve(gPuzzleManager)
+          }
+        })
       }
+    
+      _getPuzzleManager().then((pm)=> {
+        window._solution = {
+          words: pm.puzzle.words,
+          optionalWords: pm.puzzle.optionalWords,
+          board: pm.puzzle.board
+        }
+      })
     `
 
-    fs.writeFileSync(path.join(__dirname, "./unclosured.js"), modifiedCode)
+    return modifiedCode
   } else {
     throw Error("Failed to parse closure script.")
   }
 }
 
-export default writeDictionary
+export default getUnclosuredScript
 
 // testCode = `function test () {
 //   var a = "b\nc"
